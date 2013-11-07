@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html data-require="math graphie graphie-geometry word-problems interactive subhints">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Conditional Probability Intuition 1</title>
+    <script src="../khan-exercise.js"></script>
+</head>
+<body>
+<div class="exercise">
+    <div class="vars">
+                <var id="S1_WIDTH">randRange(1, 49)</var> // Space 1: unconditional probability of a recession
+                <var id="S2_WIDTH">100 - S1_WIDTH</var>   // Space 2: unconditional probability of a recession NOT happening
+                <var id="S_HEIGHT">1</var>                // the height of the bars on the graph
+                <var id="AinS1">randRange(50, 99)</var> // Event A in S1: the probability of a correct prediction of a recession, in a recession (i.e., when there is indeed a recession)
+                <var id="AinS2">randRange(1, 49)</var> // the probability of a correct prediction of a recession, when not in a recession (i.e., when there is indeed NO recession)
+                <var id="propAinS1">S1_WIDTH * AinS1 / 100</var> // Proportional probability of Event A in S1
+                <var id="propAinS2">S2_WIDTH * AinS2 / 100</var> // Proportional probability of Event A in S2
+                <var id="WRONGS">
+                  (function() {
+                    // array of wrong answers, mixed with the correct one: 
+                    var wrongs = [ S1_WIDTH, S2_WIDTH, propAinS1, roundTo(2, propAinS1 * 100 / (propAinS1 + propAinS2)), propAinS2, roundTo(2, propAinS1 * 100 / propAinS2) ];
+
+	            var i = 6, j, temp;
+	            while ( --i){  // randomize the answers
+		        j = Math.floor( Math.random() * (i - 1) );
+		        temp = wrongs[i];
+		        wrongs[i] = wrongs[j];
+		        wrongs[j] = temp;
+	            }
+                    return wrongs;
+                  })()
+                </var>
+    </div>
+
+    <div class="problems">
+        <div id="recession">
+
+            <p class="problem">
+              A prominent economist has created a model to predict recessions. 
+              The model is not completely accurate. <br/>
+              It correctly predicts a recession <span class="hint_red">in the economy</span> with probability 
+              <span class="hint_green"><var>AinS1</var>%</span> when a recession is indeed coming and 
+              incorrectly predicts a recession with probability 
+              <span class="hint_blue"><var>AinS2</var>%</span> when NO recession is coming.
+              <br/>
+              From history, the unconditional probability of falling into a recession is 
+              <span class="hint_orange"><var>S1_WIDTH</var>%</span>. 
+            </p>
+
+            <p class="question">
+              If the model predicts a recession, what is the probability that a recession will indeed come? 
+            </p>
+
+            <div class="problem">
+              <div class="graphie">
+                    graphInit({
+                        range: [[0, 110], [0, 10]],
+                        scale: [4, 40],
+                        axisArrows: "&lt;-&gt;",
+                        tickStep: [1, 1],
+                        gridStep: [10, 1],
+                        labelStep: [1, 1],
+                        gridOpacity: 0.05,
+                        axisOpacity: 0.2,
+                        tickOpacity: 0.4,
+                        labelOpacity: 0.5
+                    });
+
+                addMouseLayer();
+
+            /*
+             ******* S2 *******************************************
+            */
+
+            graph.s2 = addMovablePolygon({  // this is the entire space (both recession and NO-recession probability)
+                points: [ [0, 8], [0, 8 + S_HEIGHT], [100, 8 + S_HEIGHT], [100, 8] ],
+                sideLabels: [ "", "entire-economy (100\\%)", "", ""],
+                normalStyle: {
+                    fill: KhanUtil.WHITE
+                },
+                labelStyle: {
+                    color: KhanUtil.RED
+                },
+                fixed: true
+            });
+
+
+            /*
+             ******* S1 *******************************************
+            */
+
+            graph.s1_high = addMovablePoint({
+                    coord: [S1_WIDTH, 8 + S_HEIGHT],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false                // hmark: change this to allow users to modify values
+            });
+
+            graph.s1_low = addMovablePoint({
+                    coord: [S1_WIDTH, 8],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false                 // hmark: change this to allow users to modify values
+            });
+
+            graph.s1_line = addMovableLineSegment({
+                    pointA: graph.s1_low,
+                    pointZ: graph.s1_high,
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    movePointsWithLine: true,
+                    fixed: true,                   // hmark: change this to allow users to modify values
+                    onMove: function() {
+                        graph.moved = true;
+                    }
+            });
+
+                    
+            var recession_label = "recession (" + graph.s1_low.coord[0] + "\\%)";
+
+            graph.s1 = addMovablePolygon({  // this is the entire space (both recession and NO-recession probability)
+                points: [ [0, 8], [0, 8 + S_HEIGHT], graph.s1_high, graph.s1_low ],
+                sideLabels: [ "", "", "", recession_label],
+                normalStyle: {
+                    fill: KhanUtil.PINK
+                },
+                labelStyle: {
+                    color: KhanUtil.PINK
+                },
+                fixed: true
+            });
+
+            /*
+             ******* event A in S1 ********************************
+            */
+
+            graph.a_in_s1_high = addMovablePoint({
+                    coord: [S1_WIDTH - propAinS1, 5 + S_HEIGHT],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false               // hmark: change this to allow users to modify values
+            });
+
+            graph.a_in_s1_low = addMovablePoint({
+                    coord: [S1_WIDTH - propAinS1, 5],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false              // hmark: change this to allow users to modify values
+            });
+
+            graph.a_in_s1_line = addMovableLineSegment({
+                    pointA: graph.a_in_s1_low,
+                    pointZ: graph.a_in_s1_high,
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    movePointsWithLine: true,
+                    fixed: true,                // hmark: change this to allow users to modify values
+                    onMove: function() {
+                        graph.moved = true;
+                    }
+            });
+
+
+            var recession_a_in_s1_label = "recession (" + propAinS1 + "\\%)";
+
+            graph.a_in_s1 = addMovablePolygon({  // this is the event "recession" in s1 space (conditional recession probability)
+                points: [ graph.a_in_s1_low, graph.a_in_s1_high, [S1_WIDTH, 5 + S_HEIGHT], [S1_WIDTH, 5] ],
+                sideLabels: ["", "", "", recession_a_in_s1_label],
+                normalStyle: {
+                    fill: KhanUtil.GREEN
+                },
+                labelStyle: {
+                    color: KhanUtil.GREEN
+                },
+                fixed: true
+            });
+
+            /*
+             ******* event A in S2 ********************************
+            */
+
+            graph.a_in_s2_high = addMovablePoint({
+                    coord: [S1_WIDTH + propAinS2, 5 + S_HEIGHT],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false                       // hmark: change this to allow users to modify values
+            });
+
+            graph.a_in_s2_low = addMovablePoint({
+                    coord: [S1_WIDTH + propAinS2, 5],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false                      // hmark: change this to allow users to modify values
+            });
+
+            graph.a_in_s2_line = addMovableLineSegment({
+                    pointA: graph.a_in_s2_low,
+                    pointZ: graph.a_in_s2_high,
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    movePointsWithLine: true,
+                    fixed: true,                        // hmark: change this to allow users to modify values
+                    onMove: function() {
+                        graph.moved = true;
+                    }
+            });
+
+
+            var recession_a_in_s2_label = "no-recession (" + propAinS2 + "\\%)";
+
+            graph.a_in_s2 = addMovablePolygon({  // this is the event "recession" in s2 space (conditional recession probability)
+                points: [ [S1_WIDTH, 5], [S1_WIDTH, 5 + S_HEIGHT], graph.a_in_s2_high, graph.a_in_s2_low ],
+                sideLabels: ["", recession_a_in_s2_label, "", ""],
+                normalStyle: {
+                    fill: KhanUtil.BLUE
+                },
+                labelStyle: {
+                    color: KhanUtil.BLUE
+                },
+                fixed: true
+            });
+
+            /*
+             ******* real recession ********************************
+            */
+
+            graph.in_real_recession_A = addMovablePoint({
+                    coord: [graph.a_in_s1_low.coord[0], 3],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false
+            });
+
+            graph.in_real_recession_Z = addMovablePoint({
+                    coord: [graph.s1_low.coord[0], 3],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false
+            });
+
+            graph.in_real_recession_line = addMovableLineSegment({
+                    pointA: graph.in_real_recession_A,
+                    pointZ: graph.in_real_recession_Z,
+                    constraints: {                               // hmark: change this to allow users to modify values
+                        constrainX: false,
+                        constrainY: false
+                    },
+                    normalStyle: {
+                        // stroke-width: 4, // hmark: bug. doesn't work with any stroke value?
+                        stroke: KhanUtil.GREEN
+                    },
+                    labelStyle: {
+                        stroke: KhanUtil.GREEN,
+                        color: KhanUtil.GREEN
+                    },
+                    sideLabel: "real-recession",
+                    movePointsWithLine: true,
+                    onMove: function() {
+                        graph.moved = true;
+                    }
+            });
+
+            /*
+             ******* total predicted recession ********************************
+            */
+
+            graph.in_recession_A = addMovablePoint({
+                    coord: [graph.a_in_s1_low.coord[0], 2],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false
+            });
+
+            graph.in_recession_Z = addMovablePoint({
+                    coord: [graph.a_in_s2_low.coord[0], 2],
+                    constraints: {
+                        constrainX: false,
+                        constrainY: true
+                    },
+                    visible: false
+            });
+
+            graph.in_recession_line = addMovableLineSegment({
+                    pointA: graph.in_recession_A,
+                    pointZ: graph.in_recession_Z,
+                    constraints: {                          // hmark: change this to allow users to modify values
+                        constrainX: false,
+                        constrainY: false
+                    },
+                    normalStyle: {
+                        //stroke-width: 4, // hmark: bug. doesn't work with any stroke value?
+                        stroke: KhanUtil.BLUE
+                    },
+                    sideLabel: "model-predicted-recession",
+                    movePointsWithLine: true,
+                    onMove: function() {
+                        graph.moved = true;
+                    }
+            });
+
+
+            </div>  <!-- graphie -->
+           </div>  <!-- problem -->
+
+           <p class="solution"><var>roundTo(2, propAinS1 * 100 / (propAinS1 + propAinS2))</var></p>
+           <ul class="choices" data-category="true">
+               <li><code><var>WRONGS[0]</var></code></li>
+               <li><code><var>WRONGS[1]</var></code></li>
+               <li><code><var>WRONGS[2]</var></code></li>
+               <li><code><var>WRONGS[3]</var></code></li>
+               <li><code><var>WRONGS[4]</var></code></li>
+               <li><code><var>WRONGS[5]</var></code></li>
+               <li>None of the above</li>
+           </ul>
+
+           <div class="hints">
+                <p>
+                    The OVERALL probability of the model predicting a recession is <var>propAinS1</var>% + <var>propAinS2</var>%, namely <var>roundTo(2, propAinS1 + propAinS2)</var>%.
+                </p>
+                <p>
+                    When the model predicts a recession, it does it correctly only <var>propAinS1</var>% of the time (this is a REAL recession).
+                </p>
+                <p>
+                    So, the probability of a REAL recession, when the model predicts a recession is the correct probability (<var>propAinS1</var>%) out of the OVERALL recession prediction (<var>roundTo(2, propAinS1 + propAinS2)</var>%), namely <var>roundTo(2, propAinS1 * 100 / (propAinS1 + propAinS2))</var>%.
+                </p>
+            </div> <!-- hints -->
+        </div> <!-- recession -->
+
+    </div> <!-- problems -->
+</div>  <!-- exercise -->
+</body>
+</html>
